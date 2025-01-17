@@ -56,6 +56,7 @@ type BGPPeerSpec struct {
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=16384
 	// +kubebuilder:default:=179
+	// test
 	Port uint16 `json:"peerPort,omitempty"`
 
 	// Requested BGP hold time, per RFC4271.
