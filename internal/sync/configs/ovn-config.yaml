@@ -1,0 +1,11 @@
+---
+- name: ovn-kubernetes
+  sync: true
+  repo_link: "https://github.com/ovn-org/ovn-kubernetes"
+  branch: master
+  remote_api_directory: go-controller/pkg/crd/routeadvertisements/v1
+  local_api_directory: schemes/ovnk8s/routeadvertisementstypes
+  excludes:
+    - "*_test.go"
+    - "*_webhook.go"
+...
