@@ -44,9 +44,6 @@ const (
 	// ArgoCDKeyBackupKey is the "backup key" key for ConfigMaps.
 	ArgoCDKeyBackupKey = "backup.key"
 
-	// ArgoCDKeyConfigManagementPlugins is the configuration key for config management plugins.
-	ArgoCDKeyConfigManagementPlugins = "configManagementPlugins"
-
 	// ArgoCDKeyComponent is the resource component key for labels.
 	ArgoCDKeyComponent = "app.kubernetes.io/component"
 
@@ -84,7 +81,7 @@ const (
 	ArgoCDKeyIngressSSLRedirect = "nginx.ingress.kubernetes.io/force-ssl-redirect"
 
 	// ArgoCDKeyIngressSSLPassthrough is the ssl passthrough key for labels.
-	ArgoCDKeyIngressSSLPassthrough = "nginx.ingress.kubernetes.io/ssl-passthrough"
+	ArgoCDKeyIngressSSLPassthrough = "nginx.ingress.kubernetes.io/ssl-passthrough" // #nosec G101
 
 	// ArgoCDKeyKustomizeBuildOptions is the configuration key for the kustomize build options.
 	ArgoCDKeyKustomizeBuildOptions = "kustomize.buildOptions"
@@ -131,12 +128,6 @@ const (
 	// ArgoCDKeyResourceTrackingMethod is the configuration key for resource tracking method
 	ArgoCDKeyResourceTrackingMethod = "application.resourceTrackingMethod"
 
-	// ArgoCDKeyRepositories is the configuration key for repositories.
-	ArgoCDKeyRepositories = "repositories"
-
-	// ArgoCDKeyRepositoryCredentials is the configuration key for repository.credentials.
-	ArgoCDKeyRepositoryCredentials = "repository.credentials"
-
 	// ArgoCDKeyServerSecretKey is the server secret key property name for the Argo secret.
 	ArgoCDKeyServerSecretKey = "server.secretkey"
 
@@ -154,6 +145,12 @@ const (
 
 	// ArgoCDKeyBannerURL is the configuration key for a banner message URL.
 	ArgoCDKeyBannerURL = "ui.bannerurl"
+
+	// ArgoCDKeyBannerPermanent is the configuration key for permanent banner.
+	ArgoCDKeyBannerPermanent = "ui.bannerpermanent"
+
+	// ArgoCDKeyBannerURL is the configuration key for banner position.
+	ArgoCDKeyBannerPosition = "ui.bannerposition"
 
 	// ArgoCDKeyTLSCACert is the key for TLS CA certificates.
 	ArgoCDKeyTLSCACert = "ca.crt"
@@ -186,10 +183,6 @@ const (
 	// to be used for the Argo-CD extension image
 	ArgoCDExtensionImageEnvName = "ARGOCD_EXTENSION_IMAGE"
 
-	// ArgoCDKeycloakImageEnvName is the environment variable used to get the image
-	// to used for the Keycloak container.
-	ArgoCDKeycloakImageEnvName = "ARGOCD_KEYCLOAK_IMAGE"
-
 	// ArgoCDRedisHAProxyImageEnvName is the environment variable used to get the image
 	// to used for the Redis HA Proxy container.
 	ArgoCDRedisHAProxyImageEnvName = "ARGOCD_REDIS_HA_PROXY_IMAGE"
@@ -202,6 +195,10 @@ const (
 	// to used for the Redis container.
 	ArgoCDRedisImageEnvName = "ARGOCD_REDIS_IMAGE"
 
+	// ArgoCDServerRBACDisableFineGrainedInheritance is needed to specify if it is not possible to deny
+	// fine-grained permissions for a sub-resource if the action was explicitly allowed on the application
+	ArgoCDServerRBACDisableFineGrainedInheritance = "server.rbac.disableApplicationFineGrainedRBACInheritance"
+
 	// ArgoCDDeletionFinalizer is a finalizer to implement pre-delete hooks
 	ArgoCDDeletionFinalizer = "argoproj.io/finalizer"
 
@@ -209,7 +206,7 @@ const (
 	ArgoCDDefaultServer = "https://kubernetes.default.svc"
 
 	// ArgoCDSecretTypeLabel is needed for cluster secrets
-	ArgoCDSecretTypeLabel = "argocd.argoproj.io/secret-type"
+	ArgoCDSecretTypeLabel = "argocd.argoproj.io/secret-type" // #nosec G101
 
 	// ArgoCDManagedByLabel is needed to identify namespace managed by an instance on ArgoCD
 	ArgoCDManagedByLabel = "argocd.argoproj.io/managed-by"
@@ -227,8 +224,18 @@ const (
 	ArgoCDServerClusterRoleEnvName = "SERVER_CLUSTER_ROLE"
 
 	// ArgoCDDexSecretKey is used to reference Dex secret from Argo CD secret into Argo CD configmap
-	ArgoCDDexSecretKey = "oidc.dex.clientSecret"
+	ArgoCDDexSecretKey = "oidc.dex.clientSecret" // #nosec G101
 
 	// Label Selector is an env variable for ArgoCD instance reconcilliation.
 	ArgoCDLabelSelectorKey = "ARGOCD_LABEL_SELECTOR"
+
+	// ArgoCDKeyInstallationID is the configuration key for the installation ID.
+	ArgoCDKeyInstallationID = "installationID"
+
+	// ArgoCDTrackedByOperatorLabel for resources tracked by the operator
+	ArgoCDTrackedByOperatorLabel = "operator.argoproj.io/tracked-by"
+
+	// ALLOW_NAMESPACE_MANAGEMENT_IN_NAMESPACE_SCOPED_INSTANCES is an environment variable that controls whether
+	// the Namespace Management feature is enabled.
+	EnableManagedNamespace = "ALLOW_NAMESPACE_MANAGEMENT_IN_NAMESPACE_SCOPED_INSTANCES"
 )

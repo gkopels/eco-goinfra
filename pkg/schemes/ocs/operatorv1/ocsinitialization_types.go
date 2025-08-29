@@ -24,20 +24,7 @@ import (
 )
 
 // OCSInitializationSpec defines the desired state of OCSInitialization
-type OCSInitializationSpec struct {
-	// EnableCephTools toggles on whether or not the ceph tools pod
-	// should be deployed.
-	// Defaults to false
-	// +optional
-	// +kubebuilder:deprecatedversion:warning="This field doesn't work anymore and will be removed in future. The ceph tool box can be enabled by setting the spec.enableCephTools field in the storage cluster CR"
-	EnableCephTools bool `json:"enableCephTools,omitempty"`
-
-	// Tolerations if specified set toolbox ceph tools pod tolerations
-	// Defaults to empty
-	// +optional
-	// +kubebuilder:deprecatedversion:warning="This field doesn't work anymore and will be removed in future. The tolerations along with any other placement spec are now set by adding them in the storage cluster CR under spec.placement[toolbox]"
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-}
+type OCSInitializationSpec struct {}
 
 // OCSInitializationStatus defines the observed state of OCSInitialization
 type OCSInitializationStatus struct {
@@ -57,15 +44,6 @@ type OCSInitializationStatus struct {
 	RelatedObjects                []corev1.ObjectReference     `json:"relatedObjects,omitempty"`
 	ErrorMessage                  string                       `json:"errorMessage,omitempty"`
 	SCCsCreated                   bool                         `json:"sCCsCreated,omitempty"`
-	RookCephOperatorConfigCreated bool                         `json:"rookCephOperatorConfigCreated,omitempty"`
-	RookCephOperatorConfig        RookCephOperatorConfigStatus `json:"rookCephOperatorConfig,omitempty"`
-}
-
-type RookCephOperatorConfigStatus struct {
-	// CsiPluginTolerationsModified indicates if CsiPluginTolerations are added to the configmap via controller
-	CsiPluginTolerationsModified bool `json:"csiPluginTolerationsModified,omitempty"`
-	// CsiProvisionerTolerationsModified indicates if CsiProvisionerTolerations are added to the configmap via controller
-	CsiProvisionerTolerationsModified bool `json:"csiProvisionerTolerationsModified,omitempty"`
 }
 
 // +kubebuilder:object:root=true

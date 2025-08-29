@@ -78,13 +78,16 @@ const (
 	ArgoCDRedisServerTLSSecretName = "argocd-operator-redis-tls"
 
 	// ArgoCDRepoServerTLSSecretName is the name of the TLS secret for the repo-server
-	ArgoCDRepoServerTLSSecretName = "argocd-repo-server-tls"
+	ArgoCDRepoServerTLSSecretName = "argocd-repo-server-tls" // #nosec G101
 
 	// ArgoCDServerTLSSecretName is the name of the TLS secret for the argocd-server
-	ArgoCDServerTLSSecretName = "argocd-server-tls"
+	ArgoCDServerTLSSecretName = "argocd-server-tls" // #nosec G101
 
 	//ApplicationSetServiceNameSuffix is the suffix for Apllication Set Controller Service
 	ApplicationSetServiceNameSuffix = "applicationset-controller"
+
+	// ApplicationSetControllerWebhookSuffix is the suffix for ApplicationSet Webhook
+	ApplicationSetControllerWebhookSuffix = "appset-webhook"
 
 	// ArgoCDAggregateToControllerLabelKey is label to configure base aggregated ClusterRole for Argo CD Application Controller.
 	ArgoCDAggregateToControllerLabelKey = "argocd/aggregate-to-controller"

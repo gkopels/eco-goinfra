@@ -99,13 +99,27 @@ const (
 	CPUArchitectureMulti   CPUArchitecture = "multi"
 )
 
-// TemplateRef is used to specify the installation CR templates
-type TemplateRef struct {
+// Reference represents a namespaced reference to a Kubernetes object.
+// It is commonly used to specify dependencies or related objects in different namespaces.
+type Reference struct {
+	// Name specifies the name of the referenced object.
+	// +kubebuilder:validation:MinLength=1
 	// +required
 	Name string `json:"name"`
+
+	// Namespace specifies the namespace of the referenced object.
+	// +kubebuilder:validation:MinLength=1
 	// +required
 	Namespace string `json:"namespace"`
 }
+
+// TemplateRef is a reference to an installation Custom Resource (CR) template.
+// It provides a way to specify the template to be used for an installation process.
+type TemplateRef Reference
+
+// HostRef is a reference to a BareMetalHost node located in another namespace.
+// It is used to link a resource to a specific BareMetalHost instance.
+type HostRef Reference
 
 // ResourceRef represents the API version and kind of a Kubernetes resource
 type ResourceRef struct {
@@ -167,10 +181,13 @@ type NodeSpec struct {
 	// +required
 	HostName string `json:"hostName"`
 
+	// HostRef is used to specify a reference to a BareMetalHost resource.
+	// +optional
+	HostRef *HostRef `json:"hostRef,omitempty"`
+
 	// CPUArchitecture is the software architecture of the node.
 	// If it is not defined here then it is inheirited from the ClusterInstanceSpec.
 	// +kubebuilder:validation:Enum=x86_64;aarch64
-	// +kubebuilder:default:=x86_64
 	// +optional
 	CPUArchitecture CPUArchitecture `json:"cpuArchitecture,omitempty"`
 
@@ -228,8 +245,9 @@ type NodeSpec struct {
 type ClusterType string
 
 const (
-	ClusterTypeSNO             ClusterType = "SNO"
-	ClusterTypeHighlyAvailable ClusterType = "HighlyAvailable"
+	ClusterTypeSNO                ClusterType = "SNO"
+	ClusterTypeHighlyAvailable    ClusterType = "HighlyAvailable"
+	ClusterTypeHostedControlPlane ClusterType = "HostedControlPlane"
 )
 
 // PreservationMode represents the modes of data preservation for a ClusterInstance during reinstallation.
@@ -401,7 +419,7 @@ type ClusterInstanceSpec struct {
 	// +optional
 	CPUArchitecture CPUArchitecture `json:"cpuArchitecture,omitempty"`
 
-	// +kubebuilder:validation:Enum=SNO;HighlyAvailable
+	// +kubebuilder:validation:Enum=SNO;HighlyAvailable;HostedControlPlane
 	// +optional
 	ClusterType ClusterType `json:"clusterType,omitempty"`
 
@@ -481,9 +499,13 @@ type ReinstallHistory struct {
 	// +required
 	Generation string `json:"generation"`
 
-	// Timestamp indicates the date and time when the reinstallation occurred.
+	// RequestStartTime indicates the time at which SiteConfig was requested to reinstall.
 	// +required
-	Timestamp metav1.Time `json:"timestamp"`
+	RequestStartTime metav1.Time `json:"requestStartTime,omitempty"`
+
+	// RequestEndTime indicates the time at which SiteConfig completed processing the reinstall request.
+	// +required
+	RequestEndTime metav1.Time `json:"requestEndTime,omitempty"`
 
 	// ClusterInstanceSpecDiff provides a JSON representation of the differences between the
 	// ClusterInstance spec at the time of reinstallation and the previous spec.
@@ -494,11 +516,30 @@ type ReinstallHistory struct {
 
 // ReinstallStatus represents the current state and historical details of reinstall operations for a ClusterInstance.
 type ReinstallStatus struct {
+
+	// List of conditions pertaining to reinstall requests.
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// InProgressGeneration is the generation of the ClusterInstance that is being processed for reinstallation.
+	// It corresponds to the Generation field in ReinstallSpec and indicates the latest reinstall request that
+	// the controller is acting upon.
+	// +optional
+	InProgressGeneration string `json:"inProgressGeneration,omitempty"`
+
 	// ObservedGeneration is the generation of the ClusterInstance that has been processed for reinstallation.
 	// It corresponds to the Generation field in ReinstallSpec and indicates the latest reinstall request that
 	// the controller has acted upon.
-	// +required
-	ObservedGeneration string `json:"observedGeneration"`
+	// +optionsl
+	ObservedGeneration string `json:"observedGeneration,omitempty"`
+
+	// RequestStartTime indicates the time at which SiteConfig was requested to reinstall.
+	// +optional
+	RequestStartTime metav1.Time `json:"requestStartTime,omitempty"`
+
+	// RequestEndTime indicates the time at which SiteConfig completed processing the reinstall request.
+	// +optional
+	RequestEndTime metav1.Time `json:"requestEndTime,omitempty"`
 
 	// History maintains a record of all previous reinstallation attempts.
 	// Each entry captures details such as the generation, timestamp, and the differences in the ClusterInstance
@@ -506,6 +547,22 @@ type ReinstallStatus struct {
 	// This field is useful for debugging, auditing, and tracking reinstallation events over time.
 	// +optional
 	History []ReinstallHistory `json:"history,omitempty"`
+}
+
+type PausedStatus struct {
+	// TimeSet indicates when the paused annotation was applied.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Format=date-time
+	TimeSet metav1.Time `json:"timeSet"`
+
+	// Reason provides an explanation for why the paused annotation was applied.
+	// This field may not be empty.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MaxLength=32768
+	Reason string `json:"reason"`
 }
 
 // ClusterInstanceStatus defines the observed state of ClusterInstance
@@ -534,11 +591,18 @@ type ClusterInstanceStatus struct {
 	// Reinstall status information.
 	// +optional
 	Reinstall *ReinstallStatus `json:"reinstall,omitempty"`
+
+	// Paused provides information about the pause annotation set by the controller
+	// to temporarily pause reconciliation of the ClusterInstance.
+	// +optional
+	Paused *PausedStatus `json:"paused,omitempty"`
 }
 
+//nolint:lll
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:path=clusterinstances,scope=Namespaced
+//+kubebuilder:printcolumn:name="Paused",type="date",JSONPath=".status.paused.timeSet"
 //+kubebuilder:printcolumn:name="ProvisionStatus",type="string",JSONPath=".status.conditions[?(@.type=='Provisioned')].reason"
 //+kubebuilder:printcolumn:name="ProvisionDetails",type="string",JSONPath=".status.conditions[?(@.type=='Provisioned')].message"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"

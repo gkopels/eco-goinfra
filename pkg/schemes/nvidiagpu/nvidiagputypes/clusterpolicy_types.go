@@ -26,6 +26,7 @@ import (
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -483,7 +484,7 @@ type DriverSpec struct {
 	// UseOpenKernelModules indicates if the open GPU kernel modules should be used
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable use of open GPU kernel modules"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch,urn:alm:descriptor:com.tectonic.ui:hidden"
 	UseOpenKernelModules *bool `json:"useOpenKernelModules,omitempty"`
 
 	// KernelModuleType represents the type of driver kernel modules to be used when installing the GPU driver.
@@ -491,6 +492,9 @@ type DriverSpec struct {
 	// type is chosen based on the GPU devices on the host and the driver branch used
 	// +kubebuilder:validation:Enum=auto;open;proprietary
 	// +kubebuilder:default=auto
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kernel Module Type"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.description="Kernel Module Type"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:select:auto,urn:alm:descriptor:com.tectonic.ui:select:open,urn:alm:descriptor:com.tectonic.ui:select:proprietary"
 	KernelModuleType string `json:"kernelModuleType,omitempty"`
 
 	// Enabled indicates if deployment of NVIDIA Driver through operator is enabled
@@ -584,6 +588,11 @@ type DriverSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kernel module configuration parameters for the NVIDIA driver"
 	KernelModuleConfig *KernelModuleConfigSpec `json:"kernelModuleConfig,omitempty"`
+
+	// Optional: SecretEnv represents the name of the Kubernetes Secret with secret environment variables for the NVIDIA Driver
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Name of the Kubernetes Secret with secret environment variables for the NVIDIA Driver"
+	SecretEnv string `json:"secretEnv,omitempty"`
 }
 
 // VGPUManagerSpec defines the properties for the NVIDIA vGPU Manager deployment
@@ -907,6 +916,11 @@ type DCGMExporterSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ServiceMonitor configuration for NVIDIA DCGM Exporter"
 	ServiceMonitor *DCGMExporterServiceMonitorConfig `json:"serviceMonitor,omitempty"`
+
+	// Optional: Service configuration for NVIDIA DCGM Exporter
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Service configuration for NVIDIA DCGM Exporter"
+	ServiceSpec *DCGMExporterServiceConfig `json:"service,omitempty"`
 }
 
 // DCGMExporterMetricsConfig defines metrics to be collected by NVIDIA DCGM Exporter
@@ -917,6 +931,21 @@ type DCGMExporterMetricsConfig struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ConfigMap name with file dcgm-metrics.csv"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Name string `json:"name,omitempty"`
+}
+
+// DCGMExporterServiceConfig defines the configuration options for the Kubernetes Service deployed for DCGM Exporter
+type DCGMExporterServiceConfig struct {
+	// Type represents the ServiceType which describes ingress methods for a service
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ServiceType for the DCGM Exporter K8s Service"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	Type corev1.ServiceType `json:"type,omitempty"`
+
+	// InternalTrafficPolicy describes how nodes distribute service traffic they receive on the ClusterIP.
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Internal Traffic Policy for the DCGM Exporter K8s Service"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	InternalTrafficPolicy *corev1.ServiceInternalTrafficPolicy `json:"internalTrafficPolicy,omitempty"`
 }
 
 // DCGMExporterServiceMonitorConfig defines configuration options for the ServiceMonitor
@@ -1748,7 +1777,7 @@ func imagePath(repository string, image string, version string, imagePathEnvName
 	}
 
 	// 3. If both are not set, error out
-	return "", fmt.Errorf("Empty image path provided through both ClusterPolicy CR and ENV %s", imagePathEnvName)
+	return "", fmt.Errorf("empty image path provided through both ClusterPolicy CR and ENV %s", imagePathEnvName)
 }
 
 // ImagePath sets image path for given component type
@@ -1812,7 +1841,7 @@ func ImagePath(spec interface{}) (string, error) {
 		config := spec.(*CCManagerSpec)
 		return imagePath(config.Repository, config.Image, config.Version, "CC_MANAGER_IMAGE")
 	default:
-		return "", fmt.Errorf("Invalid type to construct image path: %v", v)
+		return "", fmt.Errorf("invalid type to construct image path: %v", v)
 	}
 }
 
@@ -2070,4 +2099,30 @@ func (c *CCManagerSpec) IsEnabled() bool {
 		return false
 	}
 	return *c.Enabled
+}
+
+// +kubebuilder:object:generate=false
+type ConfigWithName interface {
+	GetName() string
+}
+
+// GetConfigMapName returns the config's name if it's non-empty and differs from defaultName,
+// otherwise returns defaultName. The boolean indicates whether a custom name was used.
+func GetConfigMapName[T ConfigWithName](config T, defaultName string) (string, bool) {
+	if name := config.GetName(); name != "" {
+		return name, name != defaultName
+	}
+	return defaultName, false
+}
+
+func (c *MIGGPUClientsConfigSpec) GetName() string {
+	return ptr.Deref(c, MIGGPUClientsConfigSpec{}).Name
+}
+
+func (c *MIGPartedConfigSpec) GetName() string {
+	return ptr.Deref(c, MIGPartedConfigSpec{}).Name
+}
+
+func (c *VGPUDevicesConfigSpec) GetName() string {
+	return ptr.Deref(c, VGPUDevicesConfigSpec{}).Name
 }
